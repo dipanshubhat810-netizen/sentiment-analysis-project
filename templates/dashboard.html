@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sentiment Analysis</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Sentiment Analysis System</h1>
+            <p>Analyze comments from e-consultation modules and social media</p>
+            <div class="user-info">
+                <span>Welcome, <strong>{{ username }}</strong>!</span>
+                <a href="{{ url_for('logout') }}" class="btn btn-logout">Logout</a>
+            </div>
+        </header>
+
+        <nav>
+            <a href="/">🏠 Home</a>
+            <a href="/upload">📤 Upload/Analyze</a>
+            <a href="/dashboard" class="active">📈 Dashboard</a>
+        </nav>
+
+        <main>
+            <!-- Statistics Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">💬</div>
+                    <h3>{{ stats.total or 0 }}</h3>
+                    <p>Total Comments</p>
+                </div>
+                <div class="stat-card positive">
+                    <div class="stat-icon">😊</div>
+                    <h3>{{ stats.positive or 0 }}</h3>
+                    <p>Positive</p>
+                </div>
+                <div class="stat-card negative">
+                    <div class="stat-icon">😞</div>
+                    <h3>{{ stats.negative or 0 }}</h3>
+                    <p>Negative</p>
+                </div>
+                <div class="stat-card neutral">
+                    <div class="stat-icon">😐</div>
+                    <h3>{{ stats.neutral or 0 }}</h3>
+                    <p>Neutral</p>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-grid">
+                <div class="card chart-container">
+                    <h3>📊 Sentiment Distribution</h3>
+                    <canvas id="pieChart"></canvas>
+                </div>
+                <div class="card chart-container">
+                    <h3>📈 Average Sentiment Scores</h3>
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="card action-buttons">
+                <a href="/export" class="btn btn-primary">📥 Export Results (CSV)</a>
+                <a href="/upload" class="btn btn-secondary">➕ Add More Comments</a>
+            </div>
+
+            <!-- Recent Comments Table -->
+            {% if results %}
+            <div class="card">
+                <div class="table-header">
+                    <h3>📝 Recent Comments (Latest 50)</h3>
+                    <p>Showing {{ results|length }} comments</p>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Comment</th>
+                                <th>Sentiment</th>
+                                <th>Positive</th>
+                                <th>Negative</th>
+                                <th>Neutral</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in results[:50] %}
+                            <tr>
+                                <td>{{ result.id }}</td>
+                                <td class="comment-text">
+                                    {% if result.text and result.text|length > 100 %}
+                                        {{ result.text[:100] }}...
+                                    {% else %}
+                                        {{ result.text or '' }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge badge-{{ result.sentiment or 'neutral' }}">
+                                        {% if result.sentiment == 'positive' %}
+                                            😊 Positive
+                                        {% elif result.sentiment == 'negative' %}
+                                            😞 Negative
+                                        {% else %}
+                                            😐 Neutral
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td>{{ ((result.positive_score or 0) * 100)|round(1) }}%</td>
+                                <td>{{ ((result.negative_score or 0) * 100)|round(1) }}%</td>
+                                <td>{{ ((result.neutral_score or 0) * 100)|round(1) }}%</td>
+                                <td>
+                                    {% if result.created_at %}
+                                        {{ result.created_at[:16] }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% else %}
+            <div class="card empty-state">
+                <div class="empty-icon">📭</div>
+                <h3>No Comments Yet</h3>
+                <p>Upload some comments to see analysis results here!</p>
+                <a href="/upload" class="btn btn-primary">Upload Comments</a>
+            </div>
+            {% endif %}
+        </main>
+
+        <footer>
+            <p>🎓 College Project - Sentiment Analysis System</p>
+        </footer>
+    </div>
+
+    <script>
+        // Pie Chart - Sentiment Distribution
+        const pieCtx = document.getElementById('pieChart').getContext('2d');
+        new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['😊 Positive', '😞 Negative', '😐 Neutral'],
+                datasets: [{
+                    data: [{{ stats.positive or 0 }}, {{ stats.negative or 0 }}, {{ stats.neutral or 0 }}],
+                    backgroundColor: ['#4CAF50', '#f44336', '#9E9E9E'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            font: {
+                                size: 14
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Bar Chart - Average Scores
+        const barCtx = document.getElementById('barChart').getContext('2d');
+        new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Positive Score', 'Negative Score'],
+                datasets: [{
+                    label: 'Average Score (%)',
+                    data: [
+                        {{ ((stats.avg_positive or 0) * 100)|round(2) }},
+                        {{ ((stats.avg_negative or 0) * 100)|round(2) }}
+                    ],
+                    backgroundColor: ['#4CAF50', '#f44336'],
+                    borderRadius: 8,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

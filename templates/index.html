@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentiment Analysis - Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+           <h1>📊 Sentiment Analysis System</h1>
+           <p>Analyze comments from e-consultation modules and social media</p>
+           <div class="user-info">
+           <span>Welcome, <strong>{{ username }}</strong>!</span>
+           <a href="{{ url_for('logout') }}" class="btn btn-logout">Logout</a>
+         </div>
+        </header>
+        
+        <nav>
+            <a href="/" class="active">🏠 Home</a>
+            <a href="/upload">📤 Upload/Analyze</a>
+            <a href="/dashboard">📈 Dashboard</a>
+        </nav>
+        
+        <main>
+            <div class="card">
+                <h2>Welcome to Sentiment Analysis System! 👋</h2>
+                <p>This system uses Machine Learning to automatically analyze the sentiment of comments and feedback.</p>
+                
+                <div class="features">
+                    <div class="feature">
+                        <div class="feature-icon">📤</div>
+                        <h3>Upload Comments</h3>
+                        <p>Upload CSV files with thousands of comments or enter them manually</p>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">🤖</div>
+                        <h3>AI Analysis</h3>
+                        <p>Automatic sentiment classification using Natural Language Processing</p>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">📈</div>
+                        <h3>Visualize Results</h3>
+                        <p>Interactive dashboard with charts and detailed statistics</p>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <h3>How it works:</h3>
+                    <ol>
+                        <li><strong>Upload:</strong> Add your comments via CSV file or manual entry</li>
+                        <li><strong>Analyze:</strong> Our AI model processes each comment and determines sentiment</li>
+                        <li><strong>Visualize:</strong> View results in an interactive dashboard with charts</li>
+                        <li><strong>Export:</strong> Download results as CSV for further analysis</li>
+                    </ol>
+                </div>
+                
+                <div class="cta">
+                    <a href="/upload" class="btn btn-primary">Get Started →</a>
+                    <a href="/dashboard" class="btn btn-secondary">View Dashboard</a>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>📋 Sample CSV Format</h3>
+                <p>Your CSV file should have a column named <code>text</code> or <code>comment</code>:</p>
+                <div class="code-block">
+text,source<br>
+This platform is really helpful!,econsultation<br>
+The interface is confusing,econsultation<br>
+Love the new features!,econsultation
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>🎓 College Project - Sentiment Analysis System</p>
+            <p>Built with Python, Flask & Machine Learning</p>
+        </footer>
+    </div>
+</body>
+</html>

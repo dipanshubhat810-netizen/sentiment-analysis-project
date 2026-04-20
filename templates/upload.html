@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Comments</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Sentiment Analysis System</h1>
+            <p>Analyze comments from e-consultation modules and social media</p>
+            <div class="user-info">
+                <span>Welcome, <strong>{{ username }}</strong>!</span>
+                <a href="{{ url_for('logout') }}" class="btn btn-logout">Logout</a>
+            </div>
+        </header>
+
+        <nav>
+            <a href="/">🏠 Home</a>
+            <a href="/upload" class="active">📤 Upload/Analyze</a>
+            <a href="/dashboard">📈 Dashboard</a>
+        </nav>
+
+        <main>
+            <div class="card">
+                <h2>Upload & Analyze Comments</h2>
+
+                <!-- CSV Upload Section -->
+                <div class="upload-section">
+                    <h3>📁 Upload CSV File</h3>
+                    <p>CSV file should have a column named "text" or "comment"</p>
+                    <form id="csvForm" enctype="multipart/form-data">
+                        <div class="file-input-wrapper">
+                            <input type="file" name="file" accept=".csv" id="csvFile" required>
+                            <label for="csvFile" class="file-label">Choose CSV File</label>
+                            <span id="fileName">No file chosen</span>
+                        </div>
+                        <button type="submit" class="btn btn-primary">📊 Upload & Analyze</button>
+                    </form>
+                    <div id="csvResult"></div>
+                </div>
+
+                <div class="divider">
+                    <span>OR</span>
+                </div>
+
+                <!-- Manual Entry Section -->
+                <div class="upload-section">
+                    <h3>✍️ Enter Comment Manually</h3>
+                    <form id="manualForm">
+                        <textarea
+                            name="text"
+                            id="commentText"
+                            rows="6"
+                            placeholder="Enter your comment here...&#10;&#10;Example: This platform is really user-friendly and helpful!"
+                            required
+                        ></textarea>
+                        <button type="submit" class="btn btn-primary">🔍 Analyze Sentiment</button>
+                    </form>
+                    <div id="manualResult"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Show selected file name
+        document.getElementById('csvFile').addEventListener('change', function (e) {
+            const fileName = e.target.files[0]?.name || 'No file chosen';
+            document.getElementById('fileName').textContent = fileName;
+        });
+
+        // CSV Upload Handler
+        document.getElementById('csvForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData();
+            const fileInput = document.getElementById('csvFile');
+
+            if (!fileInput.files[0]) {
+                alert('Please select a file!');
+                return;
+            }
+
+            formData.append('file', fileInput.files[0]);
+
+            const resultDiv = document.getElementById('csvResult');
+            resultDiv.innerHTML = '<div class="loading">⏳ Processing CSV file... Please wait...</div>';
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success-box">
+                            <h4>✅ Success!</h4>
+                            <p>${data.message}</p>
+                            <a href="/dashboard" class="btn btn-primary">📈 View Dashboard</a>
+                        </div>
+                    `;
+                    fileInput.value = '';
+                    document.getElementById('fileName').textContent = 'No file chosen';
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error-box">
+                            <h4>❌ Error</h4>
+                            <p>${data.error || 'Something went wrong while processing the CSV.'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error-box">
+                        <h4>❌ Error</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        });
+
+        // Manual Entry Handler
+        document.getElementById('manualForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const text = document.getElementById('commentText').value.trim();
+            if (!text) {
+                alert('Please enter a comment!');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('text', text);
+
+            const resultDiv = document.getElementById('manualResult');
+            resultDiv.innerHTML = '<div class="loading">⏳ Analyzing sentiment... Please wait...</div>';
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const result = data.result;
+                    const sentiment = result.sentiment;
+
+                    const positiveScore = Number(result.positive_score || 0);
+                    const negativeScore = Number(result.negative_score || 0);
+                    const neutralScore = Number(result.neutral_score || 0);
+
+                    let emoji = '😐';
+                    let color = '#9E9E9E';
+
+                    if (sentiment === 'positive') {
+                        emoji = '😊';
+                        color = '#4CAF50';
+                    } else if (sentiment === 'negative') {
+                        emoji = '😞';
+                        color = '#f44336';
+                    }
+
+                    resultDiv.innerHTML = `
+                        <div class="result-card">
+                            <div class="result-header">
+                                <div class="sentiment-emoji" style="font-size: 48px;">${emoji}</div>
+                                <h3>Analysis Result</h3>
+                            </div>
+
+                            <div class="sentiment-label" style="background: ${color};">
+                                ${sentiment.toUpperCase()}
+                            </div>
+
+                            <div class="scores-grid">
+                                <div class="score-item positive">
+                                    <div class="score-label">Positive</div>
+                                    <div class="score-value">${(positiveScore * 100).toFixed(1)}%</div>
+                                    <div class="score-bar">
+                                        <div class="score-fill" style="width: ${positiveScore * 100}%; background: #4CAF50;"></div>
+                                    </div>
+                                </div>
+
+                                <div class="score-item negative">
+                                    <div class="score-label">Negative</div>
+                                    <div class="score-value">${(negativeScore * 100).toFixed(1)}%</div>
+                                    <div class="score-bar">
+                                        <div class="score-fill" style="width: ${negativeScore * 100}%; background: #f44336;"></div>
+                                    </div>
+                                </div>
+
+                                <div class="score-item neutral">
+                                    <div class="score-label">Neutral</div>
+                                    <div class="score-value">${(neutralScore * 100).toFixed(1)}%</div>
+                                    <div class="score-bar">
+                                        <div class="score-fill" style="width: ${neutralScore * 100}%; background: #9E9E9E;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button
+                                onclick="document.getElementById('commentText').value=''; document.getElementById('manualResult').innerHTML='';"
+                                class="btn btn-secondary"
+                            >
+                                Analyze Another Comment
+                            </button>
+                        </div>
+                    `;
+
+                    document.getElementById('commentText').value = '';
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error-box">
+                            <h4>❌ Error</h4>
+                            <p>${data.error || 'Something went wrong during analysis.'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error-box">
+                        <h4>❌ Error</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
