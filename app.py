@@ -265,9 +265,4 @@ def export():
 
 
 if __name__ == '__main__':
-    print("\n" + "=" * 50)
-    print("🚀 Starting Sentiment Analysis Web App with Authentication")
-    print("=" * 50)
-    print("📍 Open your browser and go to: http://localhost:5000")
-    print("=" * 50 + "\n")
-    app.run(debug=True, port=5000)
+    app.run()
