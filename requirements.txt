@@ -2,5 +2,5 @@ flask==2.3.0
 pandas==2.0.0
 textblob==0.17.1
 transformers==4.30.0
-torch==2.0.0
+torch>=2.1.0
 
